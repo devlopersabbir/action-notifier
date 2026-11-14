@@ -1,108 +1,114 @@
-# Telegram Failure Notifier 🚨
+# Action Notifier 🔔
 
-**Send Telegram messages when GitHub Actions jobs fail.**
+**Universal GitHub Actions notification dispatcher for Telegram, Discord, and more.**
 
-This action allows your CI/CD workflow to **notify your team instantly on Telegram** if a job fails, including default GitHub context like repository, branch, commit, and actor.
+Send instant, context-rich notifications from your CI/CD workflows to your favorite communication channels when deployments succeed, fail, or require attention.
 
 ---
 
 ## ⚡ Features
 
-- Sends Telegram messages on **job failure** (`failure()` condition)
-- Prepend **default GitHub context** to all messages:
-  - Repository
-  - Branch
-  - Commit
-  - Actor
-- Fully customizable message body (supports `<b>` and `<i>` HTML formatting)
-- Configurable **retry count** and **retry delay**
-- Supports **HTML** or **Markdown** parse modes
+- **Multi-Provider Support**: Built-in support for **Telegram** and **Discord** (easily extensible for Slack, Teams, and custom Webhooks).
+- **Automatic GitHub Context**: Automatically attaches clickable links for:
+  - 📁 Repository
+  - 🌱 Branch
+  - 📝 Commit message & short SHA
+  - 👨‍💻 Commit Author & Workflow Run
+- **Status-Aware Styling**: Automatically adjusts default messages and Discord embed colors based on job status (`failure`, `success`, `cancelled`, `info`).
+- **Built-in Resiliency**: Configurable **retry count** and **retry delay** for network reliability.
+- **Backward Compatible**: Defaults to `provider: telegram`, so existing Telegram workflows continue working seamlessly.
+
+---
 
 ---
 
 ## 🛠️ Inputs
 
-| Name          | Description                         | Default                        | Required |
-| ------------- | ----------------------------------- | ------------------------------ | -------- |
-| `bot_token`   | Telegram Bot Token                  | —                              | ✅       |
-| `chat_id`     | Telegram Chat ID (group or channel) | —                              | ✅       |
-| `message`     | Message to send                     | `❌ GitHub Actions job failed` | ❌       |
-| `retry_count` | Number of retries                   | `2`                            | ❌       |
-| `retry_delay` | Delay between retries in seconds    | `5`                            | ❌       |
-| `parse_mode`  | Parse mode: `HTML` or `Markdown`    | `HTML`                         | ❌       |
+### Universal Inputs
 
-> **Note:** Telegram Bot must be added to your group/channel. Channels usually require the bot to be an admin.
+| Name          | Description                                            | Default              | Required |
+| :------------ | :----------------------------------------------------- | :------------------- | :------: |
+| `provider`    | Notification channel: `telegram` or `discord`          | `telegram`           |    ❌    |
+| `status`      | Job status (`failure`, `success`, `cancelled`, `info`) | `${{ job.status }}`  |    ❌    |
+| `message`     | Custom notification message body                       | Status-based default |    ❌    |
+| `retry_count` | Number of retry attempts if delivery fails             | `2`                  |    ❌    |
+| `retry_delay` | Delay between retries (in seconds)                     | `5`                  |    ❌    |
+
+### Telegram Inputs (`provider: telegram`)
+
+| Name         | Description                                | Default |     Required      |
+| :----------- | :----------------------------------------- | :------ | :---------------: |
+| `bot_token`  | Telegram Bot Token                         | —       | ✅ (for Telegram) |
+| `chat_id`    | Telegram Chat ID (user, group, or channel) | —       | ✅ (for Telegram) |
+| `parse_mode` | Message parse mode: `HTML` or `Markdown`   | `HTML`  |        ❌         |
+
+### Discord Inputs (`provider: discord`)
+
+| Name          | Description                           | Default           |     Required     |
+| :------------ | :------------------------------------ | :---------------- | :--------------: |
+| `webhook_url` | Discord channel Webhook URL           | —                 | ✅ (for Discord) |
+| `username`    | Override Discord webhook display name | `Action Notifier` |        ❌        |
+| `avatar_url`  | Override Discord webhook avatar URL   | GitHub Mark Icon  |        ❌        |
 
 ---
 
-## 🔧 Usage Example
+## 🔧 Usage Examples
 
-### Notify Telegram on Failure Only
+### 1. Discord Notification (Rich Embed)
 
 ```yaml
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build & Deploy
-        run: |
-          echo "Building app..."
-          ./deploy.sh  # This may fail
-
-      - name: Notify Telegram on Failure
-        if: failure()
-        uses: devlopersabbir/telegram-action-notifier@v1.0.1
-        with:
-          bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
-          message: |
-            <b>🚨 Deployment Failed!</b>
-            Please check logs immediately.
-          retry_count: 3
-          retry_delay: 3
-          parse_mode: HTML
+- name: Notify Discord on Failure
+  if: failure()
+  uses: devlopersabbir/action-notifier@v2
+  with:
+    provider: discord
+    webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    status: ${{ job.status }}
+    message: |
+      **🚨 Production Deployment Failed!**
+      Please inspect the workflow logs immediately.
 ```
 
-### ✅ Telegram Message Output Example
+### 2. Telegram Notification
 
-```makefile
-🚨 Deployment Failed!
-Please check logs immediately.
-
-Actor: sabbir
-Branch: main
-Commit: a1b2c3d
-Repository: my-org/my-app
+```yaml
+- name: Notify Telegram on Failure
+  if: failure()
+  uses: devlopersabbir/action-notifier@v2
+  with:
+    provider: telegram
+    bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+    chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+    status: ${{ job.status }}
+    message: |
+      <b>🚨 Deployment Failed!</b>
+      Please check logs immediately.
+    retry_count: 3
+    retry_delay: 3
+    parse_mode: HTML
 ```
 
-- User message appears on top
+---
 
-- GitHub context is **always appended** automatically
+## ➕ Adding a New Provider
 
-### 🔐 Security Best Practices
+Because of the modular architecture, adding a new provider (e.g., `slack`) takes only two steps:
 
-- Never hardcode secrets in your workflow.
-- Use GitHub Secrets:
-  - TELEGRAM_BOT_TOKEN
-  - TELEGRAM_CHAT_ID
+1. Create `scripts/providers/slack.sh` and use `validate_required_vars` and `send_with_retry` from `scripts/utils.sh`.
+2. Add any provider-specific inputs to `action.yaml` if needed (`notify.sh` automatically routes `provider: slack` to `scripts/providers/slack.sh`).
 
-### 🧠 Pro Tips
+---
 
-- Use `if: failure()` to send messages only when jobs fail
-- Use `always()` for cleanup steps, if needed
-- Use HTML formatting for rich messages (`<b>`, `<i>`, `<a>` links)
-- Limit message length (~4096 characters) to avoid Telegram API errors
+## 🔐 Security Best Practices
 
-### 🏷️ Author
+- Never hardcode tokens or webhook URLs in your workflow files.
+- Always store credentials in **GitHub Actions Secrets** (`Settings → Secrets and variables → Actions`):
+  - `DISCORD_WEBHOOK_URL`
+  - `TELEGRAM_BOT_TOKEN`
+  - `TELEGRAM_CHAT_ID`
 
-Sabbir Hossain Shuvo
+---
+
+## 🏷️ Author
+
+**Sabbir Hossain Shuvo**

@@ -1,24 +1,27 @@
 ---
-name: "Telegram Failure Notifier"
-description: "Send Telegram message when GitHub Actions job fails"
+name: "Action Notifier"
+description: "Universal GitHub Actions notification dispatcher for Telegram, Discord, and more"
 author: "Sabbir Hossain Shuvo"
 
 inputs:
-  bot_token:
-    description: "Telegram Bot Token"
-    required: true
+  # Universal Inputs
+  provider:
+    description: "Notification provider ('telegram' or 'discord')"
+    default: "telegram"
+    required: false
 
-  chat_id:
-    description: "Telegram Chat ID"
-    required: true
+  status:
+    description: "Workflow/job status ('failure', 'success', 'cancelled', 'info') used for styling and defaults"
+    default: "${{ job.status }}"
+    required: false
 
   message:
-    description: "Message to send"
-    default: "❌ GitHub Actions job failed"
+    description: "Custom message to send"
+    default: ""
     required: false
 
   retry_count:
-    description: "Number of retries"
+    description: "Number of retry attempts on failure"
     default: "2"
     required: false
 
@@ -27,28 +30,58 @@ inputs:
     default: "5"
     required: false
 
+  # Telegram Provider Inputs
+  bot_token:
+    description: "Telegram Bot Token (required when provider is 'telegram')"
+    required: false
+
+  chat_id:
+    description: "Telegram Chat ID (required when provider is 'telegram')"
+    required: false
+
   parse_mode:
-    description: "Parse mode"
+    description: "Telegram parse mode ('HTML' or 'Markdown')"
     default: "HTML"
     required: false
 
+  # Discord Provider Inputs
+  webhook_url:
+    description: "Discord Webhook URL (required when provider is 'discord')"
+    required: false
+
+  username:
+    description: "Custom bot username for Discord notifications"
+    default: "Action Notifier"
+    required: false
+
+  avatar_url:
+    description: "Custom bot avatar URL for Discord notifications"
+    default: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+    required: false
+
 branding:
-  icon: "message-square"
-  color: "red"
+  icon: "bell"
+  color: "blue"
 
 runs:
   using: "composite"
   steps:
-    - name: Send Telegram Notification
+    - name: Send Notification
       shell: bash
       env:
-        BOT_TOKEN: ${{ inputs.bot_token }}
-        CHAT_ID: ${{ inputs.chat_id }}
+        PROVIDER: ${{ inputs.provider }}
+        STATUS: ${{ inputs.status }}
         MESSAGE: ${{ inputs.message }}
-        # Optional inputs
         RETRY_COUNT: ${{ inputs.retry_count }}
         RETRY_DELAY: ${{ inputs.retry_delay }}
+        # Telegram
+        BOT_TOKEN: ${{ inputs.bot_token }}
+        CHAT_ID: ${{ inputs.chat_id }}
         PARSE_MODE: ${{ inputs.parse_mode }}
+        # Discord
+        WEBHOOK_URL: ${{ inputs.webhook_url }}
+        DISCORD_USERNAME: ${{ inputs.username }}
+        DISCORD_AVATAR_URL: ${{ inputs.avatar_url }}
       run: |
-        chmod +x "$GITHUB_ACTION_PATH/scripts/send-telegram.sh"
-        bash "$GITHUB_ACTION_PATH/scripts/send-telegram.sh"
+        chmod +x "$GITHUB_ACTION_PATH/scripts/notify.sh"
+        bash "$GITHUB_ACTION_PATH/scripts/notify.sh"
