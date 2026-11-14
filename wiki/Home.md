@@ -35,7 +35,7 @@
 ```yaml
 - name: Notify Discord on Failure
   if: failure()
-  uses: devlopersabbir/action-notifier@v2
+  uses: devlopersabbir/action-notifier@v1.1.0
   with:
     provider: discord
     webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
