@@ -57,7 +57,7 @@ jobs:
 
       - name: Send Notification
         if: failure() # Or use always() to notify on both success and failure
-        uses: devlopersabbir/action-notifier@v1.1.0
+        uses: devlopersabbir/action-notifier@v1.2.0
         with:
           provider: discord
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

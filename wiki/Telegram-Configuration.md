@@ -55,7 +55,7 @@ You can send notifications to a **Personal Chat**, a **Group**, or a **Channel**
 ```yaml
       - name: Notify Telegram on Failure
         if: failure()
-        uses: devlopersabbir/action-notifier@v1.1.0
+        uses: devlopersabbir/action-notifier@v1.2.0
         with:
           provider: telegram
           bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -74,7 +74,7 @@ You can send notifications to a **Personal Chat**, a **Group**, or a **Channel**
 ```yaml
       - name: Notify Telegram with Markdown
         if: always()
-        uses: devlopersabbir/action-notifier@v1.1.0
+        uses: devlopersabbir/action-notifier@v1.2.0
         with:
           provider: telegram
           bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
