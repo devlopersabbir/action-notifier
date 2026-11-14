@@ -69,7 +69,7 @@ Send instant, context-rich notifications from your CI/CD workflows to your favor
 ```yaml
 - name: Notify Discord on Failure
   if: failure()
-  uses: devlopersabbir/action-notifier@v2
+  uses: devlopersabbir/action-notifier@v1.1.0
   with:
     provider: discord
     webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -84,7 +84,7 @@ Send instant, context-rich notifications from your CI/CD workflows to your favor
 ```yaml
 - name: Notify Telegram on Failure
   if: failure()
-  uses: devlopersabbir/action-notifier@v2
+  uses: devlopersabbir/action-notifier@v1.1.0
   with:
     provider: telegram
     bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}

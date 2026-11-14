@@ -32,7 +32,7 @@ This guide walks you through setting up rich Discord Embed notifications for you
 ```yaml
       - name: Notify Discord on Failure
         if: failure()
-        uses: devlopersabbir/action-notifier@v2
+        uses: devlopersabbir/action-notifier@v1.1.0
         with:
           provider: discord
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -49,7 +49,7 @@ By passing `status: ${{ job.status }}` and `if: always()`, the Discord embed aut
 ```yaml
       - name: Notify Discord Pipeline Status
         if: always()
-        uses: devlopersabbir/action-notifier@v2
+        uses: devlopersabbir/action-notifier@v1.1.0
         with:
           provider: discord
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -61,7 +61,7 @@ By passing `status: ${{ job.status }}` and `if: always()`, the Discord embed aut
 ```yaml
       - name: Notify Discord with Custom Bot Profile
         if: always()
-        uses: devlopersabbir/action-notifier@v2
+        uses: devlopersabbir/action-notifier@v1.1.0
         with:
           provider: discord
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
