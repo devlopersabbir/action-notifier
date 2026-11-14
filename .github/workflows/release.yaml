@@ -44,24 +44,14 @@ jobs:
         run: |
           echo "custom_tag=${RAW_TAG#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Bump version and create Git tag
+      - name: Calculate next version tag (dry run)
         id: tag_version
         uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ github.token }}
           default_bump: ${{ inputs.bump }}
           custom_tag: ${{ steps.normalize.outputs.custom_tag }}
-
-      - name: Update floating major tag (e.g., v1, v2)
-        if: steps.tag_version.outputs.new_tag != '' && !inputs.prerelease
-        env:
-          NEW_TAG: ${{ steps.tag_version.outputs.new_tag }}
-        run: |
-          MAJOR_TAG=$(echo "$NEW_TAG" | cut -d. -f1)
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -fa "$MAJOR_TAG" -m "Update $MAJOR_TAG tag to $NEW_TAG"
-          git push origin "$MAJOR_TAG" --force
+          dry_run: true
 
       - name: Build release notes from plain-text Git commits
         id: release_notes
@@ -96,6 +86,38 @@ jobs:
             echo "$EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Update docs with new version and push tags
+        if: steps.tag_version.outputs.new_tag != ''
+        env:
+          NEW_TAG: ${{ steps.tag_version.outputs.new_tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$PRERELEASE" != "true" ]; then
+            # Replace devlopersabbir/action-notifier@<version> across README.md and wiki/*.md
+            sed -i -E "s|(devlopersabbir/action-notifier@)v[0-9A-Za-z._-]+|\1${NEW_TAG}|g" README.md wiki/*.md
+
+            if ! git diff --quiet README.md wiki/; then
+              git add README.md wiki/*.md
+              git commit -m "docs: update action version to ${NEW_TAG} [skip ci]"
+              git push origin "HEAD:${GITHUB_REF_NAME}"
+            fi
+          fi
+
+          # Create and push the release tag
+          git tag -f "$NEW_TAG"
+          git push origin "refs/tags/${NEW_TAG}" --force
+
+          # Update floating major tag (e.g., v1, v2) for non-prereleases
+          if [ "$PRERELEASE" != "true" ]; then
+            MAJOR_TAG=$(echo "$NEW_TAG" | cut -d. -f1)
+            git push origin ":refs/tags/${MAJOR_TAG}" 2>/dev/null || true
+            git tag -f "$MAJOR_TAG"
+            git push origin "refs/tags/${MAJOR_TAG}"
+          fi
+
       - name: Publish GitHub Release
         if: steps.tag_version.outputs.new_tag != ''
         uses: softprops/action-gh-release@v2
@@ -106,28 +128,4 @@ jobs:
           body: ${{ steps.release_notes.outputs.body }}
           prerelease: ${{ inputs.prerelease }}
           generate_release_notes: false
-
-      - name: Update docs with latest released version
-        if: success() && steps.tag_version.outputs.new_tag != '' && !inputs.prerelease
-        env:
-          NEW_TAG: ${{ steps.tag_version.outputs.new_tag }}
-        run: |
-          # Replace devlopersabbir/action-notifier@<version> across README.md and wiki/*.md
-          sed -i -E "s|(devlopersabbir/action-notifier@)v[0-9A-Za-z._-]+|\1${NEW_TAG}|g" README.md wiki/*.md
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          if ! git diff --quiet README.md wiki/; then
-            git add README.md wiki/*.md
-            git commit -m "docs: update action version to ${NEW_TAG} [skip ci]"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-
-            # Keep release tag and floating major tag aligned with updated docs
-            MAJOR_TAG=$(echo "$NEW_TAG" | cut -d. -f1)
-            git tag -fa "$NEW_TAG" -m "Release $NEW_TAG"
-            git tag -fa "$MAJOR_TAG" -m "Update $MAJOR_TAG tag to $NEW_TAG"
-            git push origin "$NEW_TAG" --force
-            git push origin "$MAJOR_TAG" --force
-          fi
 
