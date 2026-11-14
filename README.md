@@ -20,6 +20,16 @@ Send instant, context-rich notifications from your CI/CD workflows to your favor
 
 ---
 
+## 📚 Documentation & Setup Guides (Wiki)
+
+- 🏠 **[Wiki Home](wiki/Home.md)**
+- 🚀 **[Installation & Setup](wiki/Installation-and-Setup.md)**
+- 💬 **[Discord Configuration Guide](wiki/Discord-Configuration.md)** (Webhook creation, status colors, examples)
+- ✈️ **[Telegram Configuration Guide](wiki/Telegram-Configuration.md)** (`@BotFather`, finding `chat_id`, HTML/Markdown examples)
+- 🛠️ **[Configuration Reference](wiki/Configuration-Reference.md)**
+- ➕ **[Adding New Providers](wiki/Adding-New-Providers.md)**
+- ❓ **[Troubleshooting & FAQ](wiki/Troubleshooting-and-FAQ.md)**
+
 ---
 
 ## 🛠️ Inputs
