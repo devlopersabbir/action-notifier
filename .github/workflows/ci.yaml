@@ -7,33 +7,16 @@ on:
     branches: [main]
 
 jobs:
-  test-telegram:
-    name: Test Telegram Notification
-    runs-on: ubuntu-latest
-    if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != '' }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Send Telegram Notification
-        if: always()
-        uses: ./
-        with:
-          provider: telegram
-          bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
-          status: ${{ job.status }}
-          message: "<b>🔔 CI Test Notification (Telegram)</b>"
-
-  test-discord:
+  test:
     name: Test Discord Notification
     runs-on: ubuntu-latest
-    if: ${{ secrets.DISCORD_WEBHOOK_URL != '' }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Send Discord Notification
+        ## if: failure()
         if: always()
         uses: ./
         with:
